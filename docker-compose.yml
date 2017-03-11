@@ -1,0 +1,7 @@
+exchange-bot:
+    build: .
+    container_name: exchange-bot
+    hostname: exchange-bot
+    restart: always
+    ports:
+        - "8080:8080"
