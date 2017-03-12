@@ -88,7 +88,7 @@ type HttpResponse struct {
 }
 
 func Fetch(fromCur string, resChan chan *CryptonatorAnswerStatus) {
-	fetcherCh := make(chan *HttpResponse)
+	fetcherCh := make(chan *HttpResponse, 1)
 	go func() {
 		res, err := http.Get(fmt.Sprintf(CRYPTONATOR_URL, fromCur, TO_CUR))
 		fetcherCh <- &HttpResponse{res, err}
