@@ -59,6 +59,7 @@ func (c *Crypronator) Download() (string, error) {
 		ctr += 1
 	}
 	var err error
+	timer := time.NewTimer(ALL_REQUESTS_TIMEOUT * time.Second)
 	L: for i := 0; i < ctr; i++ {
 		select {
 		case r := <- resChan:
@@ -70,7 +71,7 @@ func (c *Crypronator) Download() (string, error) {
 				continue
 			}
 			message += strings.ToUpper(r.C.Ticker.Base) + ": " + r.C.Ticker.Price + TO_CUR_SYMBOL + " "
-		case <- time.After(ALL_REQUESTS_TIMEOUT * time.Second):
+		case <- timer.C:
 			if len(message) == 0 {
 				err = errors.New("Message is empty")
 			}

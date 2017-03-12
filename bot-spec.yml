@@ -14,5 +14,5 @@ ignored_commands:
 test_cases:
   - command: "биток все, эфир тузэмун"
       result: "Exchange courses are [BTC:|ETH:]+\\s[0-9]+\\.?[0-9]+₽.*"
-  - command: "биток все, эфир тузэмун"
+  - command: "usd/euro"
       result: "Exchange courses are [USD:|EUR:]+\\s[0-9]+\\.?[0-9]+₽.*"
