@@ -31,9 +31,9 @@ func TestBehavior(t *testing.T) {
 			t.Errorf("HTTP STATUS CODE got %d want %d", resp.StatusCode, http.StatusCreated)
 		}
 		if v, ok := resp.Header["Content-Type"]; !ok {
-			t.Errorf("HTTP CONTENT TYPE got %d want %d", "nil", "application/json")
+			t.Errorf("HTTP CONTENT TYPE got %q want %q", "nil", "application/json")
 		} else if v[0] != "application/json" {
-			t.Errorf("HTTP CONTENT TYPE got %d want %d", v[0], "application/json")
+			t.Errorf("HTTP CONTENT TYPE got %q want %q", v[0], "application/json")
 		}
 		body, err := ioutil.ReadAll(io.LimitReader(resp.Body, BODY_BUFFER))
 		if err != nil {

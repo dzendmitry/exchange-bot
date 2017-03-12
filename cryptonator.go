@@ -49,7 +49,7 @@ func (c *Crypronator) Download() (string, error) {
 		return "", errors.New("Nothing to download")
 	}
 	message := MESSAGE_PREFIX
-	resChan := make(chan *CryptonatorAnswerStatus)
+	resChan := make(chan *CryptonatorAnswerStatus, CURRENCIES_COUNT)
 	var ctr int
 	for i, v := range c.parser.CurIndexes {
 		if !v {
