@@ -11,6 +11,7 @@ import (
 	"strings"
 )
 
+const ONE_REQUEST_TIMEOUT = 1
 const ALL_REQUESTS_TIMEOUT = 5
 
 const CRYPTONATOR_URL = "https://api.cryptonator.com/api/ticker/%s-%s"
@@ -81,43 +82,61 @@ func (c *Crypronator) Download() (string, error) {
 	return message, err
 }
 
+type HttpResponse struct {
+	Res *http.Response
+	Err error
+}
+
 func Fetch(fromCur string, resChan chan *CryptonatorAnswerStatus) {
-	res, err := http.Get(fmt.Sprintf(CRYPTONATOR_URL, fromCur, TO_CUR))
-	if err != nil {
-		resChan <- &CryptonatorAnswerStatus{nil, err}
-		return
-	}
-	if res.StatusCode != http.StatusOK {
-		resChan <- &CryptonatorAnswerStatus{
-			C: nil,
-			Err: errors.New(fmt.Sprintf("Downloading result for %s is %s", fromCur, res.Status)),
+	fetcherCh := make(chan *HttpResponse)
+	go func() {
+		res, err := http.Get(fmt.Sprintf(CRYPTONATOR_URL, fromCur, TO_CUR))
+		fetcherCh <- &HttpResponse{res, err}
+	}()
+	select {
+	case fr := <- fetcherCh:
+		if fr.Err != nil {
+			resChan <- &CryptonatorAnswerStatus{nil, fr.Err}
+			return
 		}
-		return
-	}
-	body, err := ioutil.ReadAll(io.LimitReader(res.Body, BODY_BUFFER))
-	if err != nil {
-		resChan <- &CryptonatorAnswerStatus{
-			C: nil,
-			Err: errors.New(fmt.Sprintf("Reading body %s: %s", fromCur, res.Status)),
+		res := fr.Res
+		if res.StatusCode != http.StatusOK {
+			resChan <- &CryptonatorAnswerStatus{
+				C: nil,
+				Err: errors.New(fmt.Sprintf("Downloading result for %s is %s", fromCur, res.Status)),
+			}
+			return
 		}
-		return
-	}
-	if err = res.Body.Close(); err != nil {
-		resChan <- &CryptonatorAnswerStatus{
-			C: nil,
-			Err: errors.New(fmt.Sprintf("Closing body %s: %s", fromCur, res.Status)),
+		body, err := ioutil.ReadAll(io.LimitReader(res.Body, BODY_BUFFER))
+		if err != nil {
+			resChan <- &CryptonatorAnswerStatus{
+				C: nil,
+				Err: errors.New(fmt.Sprintf("Reading body %s: %s", fromCur, res.Status)),
+			}
+			return
 		}
-		return
-	}
+		if err = res.Body.Close(); err != nil {
+			resChan <- &CryptonatorAnswerStatus{
+				C: nil,
+				Err: errors.New(fmt.Sprintf("Closing body %s: %s", fromCur, res.Status)),
+			}
+			return
+		}
 
-	var ca CryptonatorAnswer
-	if err := json.Unmarshal(body, &ca); err != nil {
+		var ca CryptonatorAnswer
+		if err := json.Unmarshal(body, &ca); err != nil {
+			resChan <- &CryptonatorAnswerStatus{
+				C: nil,
+				Err: errors.New(fmt.Sprintf("Unmarshalling cryptonator answer %s: %s", fromCur, res.Status)),
+			}
+			return
+		}
+
+		resChan <- &CryptonatorAnswerStatus{&ca, nil}
+	case <- time.After(time.Second * ONE_REQUEST_TIMEOUT):
 		resChan <- &CryptonatorAnswerStatus{
 			C: nil,
-			Err: errors.New(fmt.Sprintf("Unmarshalling cryptonator answer %s: %s", fromCur, res.Status)),
+			Err: errors.New(fmt.Sprintf("HTTP request is timed out")),
 		}
-		return
 	}
-
-	resChan <- &CryptonatorAnswerStatus{&ca, nil}
 }
