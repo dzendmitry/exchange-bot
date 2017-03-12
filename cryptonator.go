@@ -72,9 +72,6 @@ func (c *Crypronator) Download() (string, error) {
 			}
 			message += strings.ToUpper(r.C.Ticker.Base) + ": " + r.C.Ticker.Price + TO_CUR_SYMBOL + " "
 		case <- timer.C:
-			if len(message) == 0 {
-				err = errors.New("Message is empty")
-			}
 			break L
 		}
 	}
